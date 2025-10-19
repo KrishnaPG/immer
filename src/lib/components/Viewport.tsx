@@ -1,11 +1,14 @@
 import type React from "react";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { SpatialContext } from "../context/SpatialContext";
+import { Basis } from "@/lib/geometry/Basis";
+import { AffineTransform } from "@/lib/geometry/transform";
 import { Viewport as ViewportClass } from "../imperative/Viewport";
+import { useViewport } from "./hooks/useViewport";
 import { ViewportControls } from "./ViewportControls";
 
 export interface ViewportProps {
 	children: React.ReactNode;
+	id?: string;
 	width?: number | string;
 	height?: number | string;
 	controls?: boolean;
@@ -17,6 +20,7 @@ export const Viewport = forwardRef<ViewportClass, ViewportProps>(
 	(
 		{
 			children,
+			id,
 			width = "100%",
 			height = 400,
 			controls = false,
@@ -26,17 +30,24 @@ export const Viewport = forwardRef<ViewportClass, ViewportProps>(
 		ref,
 	) => {
 		const viewportRef = useRef<HTMLDivElement>(null);
-		const viewportInstance = useRef<ViewportClass | null>(null);
 
-		// Initialize imperative instance
+		// Use the Valtio-based useViewport hook
+		const { viewport, basis } = useViewport(id);
+
+		// Update container reference in viewport
 		useEffect(() => {
-			if (viewportRef.current && !viewportInstance.current) {
-				viewportInstance.current = new ViewportClass(viewportRef.current);
+			if (viewportRef.current && viewport) {
+				viewport.container = viewportRef.current;
 			}
-		}, []);
+		}, [viewport]);
 
 		// Expose imperative API
-		useImperativeHandle(ref, () => viewportInstance.current!);
+		useImperativeHandle(ref, () => {
+			if (viewportRef.current && viewport) {
+				return new ViewportClass(viewportRef.current);
+			}
+			throw new Error("Viewport not initialized");
+		}, [viewport]);
 
 		return (
 			<div
@@ -44,14 +55,16 @@ export const Viewport = forwardRef<ViewportClass, ViewportProps>(
 				className={`affine-viewport ${className}`}
 				style={{ width, height }}
 			>
-				<SpatialContext.Provider value={{
-					viewport: viewportInstance.current,
-					currentSpace: null,
-					coordinateSystem: null
-				}}>
-					<div className="affine-hyperspace">{children}</div>
-					{controls && <ViewportControls />}
-				</SpatialContext.Provider>
+				<div
+					className="affine-hyperspace"
+					style={{
+						transform: `matrix(${basis.transform.toCSSMatrix()})`,
+						transformOrigin: "0 0",
+					}}
+				>
+					{children}
+				</div>
+				{controls && <ViewportControls />}
 			</div>
 		);
 	},

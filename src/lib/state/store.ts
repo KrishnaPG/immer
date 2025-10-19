@@ -1,3 +1,4 @@
+import * as tf from "@tensorflow/tfjs";
 import { proxy } from "valtio";
 import { AffineTransform } from "@/lib/geometry/transform";
 import { Vector2D } from "@/lib/geometry/vector";
@@ -15,6 +16,7 @@ import type {
 	TWidth,
 } from "@/types/branded.types";
 import type { IElement, ISpace, IViewport } from "@/types/core.interfaces";
+import { Basis } from "../geometry/Basis";
 
 /**
  * Valtio store for state management
@@ -48,8 +50,7 @@ export const spaceActions = {
 		const space: ISpace = {
 			id,
 			elements: new Map(),
-			transform: AffineTransform.identity()
-				.matrix as unknown as TAffineTransform,
+			transform: AffineTransform.identity().getRaw() as unknown as TAffineTransform,
 			bounds: undefined,
 			...config,
 		};
@@ -84,6 +85,17 @@ export const spaceActions = {
 			store.activeSpace = id;
 		}
 	},
+
+	updateSpaceTransform: (id: TSpaceId, transform: AffineTransform): void => {
+		const space = store.spaces.get(id);
+		if (space) {
+			space.transform = transform.getRaw() as unknown as TAffineTransform;
+		}
+	},
+
+	getSpace: (id: TSpaceId): ISpace | undefined => {
+		return store.spaces.get(id);
+	},
 };
 
 /**
@@ -104,7 +116,10 @@ export const viewportActions = {
 			id,
 			space,
 			camera: {
-				position: new Vector2D(0 as TCoordinate, 0 as TCoordinate),
+				position: new Vector2D(new Basis(AffineTransform.identity()), {
+					x: 0 as TCoordinate,
+					y: 0 as TCoordinate,
+				}),
 				rotation: 0 as TAngle,
 				zoom: 1 as TScale,
 				projection: "orthographic",
@@ -153,16 +168,18 @@ export const elementActions = {
 		const element: IElement = {
 			id,
 			type: "element" as TElementType,
-			position: new Vector2D(0 as TCoordinate, 0 as TCoordinate),
+			position: new Vector2D(new Basis(AffineTransform.identity()), {
+				x: 0 as TCoordinate,
+				y: 0 as TCoordinate,
+			}),
 			size: {
 				width: 100 as TWidth,
 				height: 100 as THeight,
-				tensor: new Vector2D(100 as TCoordinate, 100 as TCoordinate).tensor,
+				tensor: tf.tensor1d([100, 100]),
 			},
 			rotation: 0 as TAngle,
 			scale: 1 as TScale,
-			transform: AffineTransform.identity()
-				.matrix as unknown as TAffineTransform,
+			transform: AffineTransform.identity().getRaw() as unknown as TAffineTransform,
 			visible: true,
 			interactive: true,
 			children: [],
@@ -204,7 +221,7 @@ export const elementActions = {
 	): void => {
 		const element = store.elements.get(id);
 		if (element) {
-			element.transform = transform.matrix as unknown as TAffineTransform;
+			element.transform = transform.getRaw() as unknown as TAffineTransform;
 		}
 	},
 };

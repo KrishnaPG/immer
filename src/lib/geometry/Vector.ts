@@ -7,17 +7,19 @@ import { Point } from './Point';
  * Vector class with coordinate system support
  */
 export class Vector {
-  readonly basis: Basis;
-  readonly x: TCoordinateX;
-  readonly y: TCoordinateY;
-  readonly z: TCoordinateZ;
+	readonly basis: Basis;
+	readonly x: TCoordinateX;
+	readonly y: TCoordinateY;
+	readonly z: TCoordinateZ;
+	readonly tensor: tf.Tensor1D;
 
-  constructor(basis: Basis, coordinates: { x: number; y: number; z?: number }) {
-    this.basis = basis;
-    this.x = coordinates.x as TCoordinateX;
-    this.y = coordinates.y as TCoordinateY;
-    this.z = (coordinates.z || 0) as TCoordinateZ;
-  }
+	constructor(basis: Basis, coordinates: { x: number; y: number; z?: number }) {
+		this.basis = basis;
+		this.x = coordinates.x as TCoordinateX;
+		this.y = coordinates.y as TCoordinateY;
+		this.z = (coordinates.z || 0) as TCoordinateZ;
+		this.tensor = tf.tensor1d([coordinates.x, coordinates.y, coordinates.z || 0]);
+	}
 
   static fromPoints(basis: Basis, fromPoint: Point, toPoint: Point): Vector {
     const sameBasisToPoint = toPoint.basis === basis ? toPoint : toPoint.changeBasis(basis);
@@ -81,7 +83,11 @@ export class Vector {
   }
 
   getRaw() {
-    return { x: this.x as number, y: this.y as number, z: this.z as number };
+  	return { x: this.x as number, y: this.y as number, z: this.z as number };
+  }
+ 
+  dispose() {
+  	this.tensor.dispose();
   }
 }
 

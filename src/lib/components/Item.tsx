@@ -1,9 +1,8 @@
 import { clsx } from "clsx";
 import type React from "react";
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { useSpatialContext } from "../context/SpatialContext";
-import { useSpatialGesture } from "../interactions/hooks/useSpatialGesture";
-import { useSpatialDnd } from "../interactions/SpatialDndContext";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { AffineTransform } from "@/lib/geometry/transform";
+import { useItem } from "./hooks/useItem";
 
 export interface ItemProps {
 	children: React.ReactNode;
@@ -82,112 +81,88 @@ export const Item = forwardRef<IItem, ItemProps>(
 	) => {
 		const itemRef = useRef<HTMLDivElement>(null);
 		const itemInstance = useRef<IItem | null>(null);
-		const { viewport } = useSpatialContext();
 
-		// Set up spatial gestures
-		const { bind: gestureBind } = useSpatialGesture(
-			itemRef as React.RefObject<HTMLElement>,
-			{
-				enableDrag: isDraggable,
-				enablePinch: isScalable || isRotatable,
-				enableWheel: isScalable,
-				enableHover: isTappable || isHoldable || isApproachable,
-				dragThreshold: gestureOptions.dragThreshold || 5,
-				pinchThreshold: gestureOptions.pinchThreshold || 10,
-			},
-			{
-				onDrag: (delta, event) => {
-					onDrag?.(event);
-				},
-				onPinch: (transform, event) => {
-					onScale?.(event);
-				},
-				onWheel: (transform, event) => {
-					onScale?.(event);
-				},
-				onTap: (point, event) => {
-					onTap?.(event);
-				},
-				onHover: (active, event) => {
-					onApproach?.(event);
-				},
-			}
-		);
-
-		// Set up drag and drop
-		const dndAttributes = enableDnd && dndId ? {
-			'data-dnd-id': dndId,
-			draggable: true,
-		} : {};
+		// Use Valtio-based useItem hook
+		const { elementId: itemId, element, basis, updatePosition, updateTransform } = useItem();
 
 		// Initialize item instance
 		useEffect(() => {
 			if (itemRef.current && !itemInstance.current) {
-				const element = itemRef.current;
+				const domElement = itemRef.current;
 
 				// Set up element with affine-item class
-				element.classList.add(clsx("affine-item", className));
-				element.style.position = "absolute";
-				element.style.transformOrigin = "center";
+				domElement.classList.add(clsx("affine-item", className));
+				domElement.style.position = "absolute";
+				domElement.style.transformOrigin = "center";
 
-				// Apply initial transform
-				const transform = `translate(${x}px, ${y}px) rotate(${rotation}rad) scale(${scale})`;
-				element.style.transform = transform;
+				// Apply initial transform using Valtio state
+				if (domElement && element) {
+					const valtioElement = element; // Valtio element from useItem hook
+					const currentTransform = valtioElement.transform as any;
+					const transformMatrix = new AffineTransform(
+						currentTransform.a,
+						currentTransform.b,
+						currentTransform.x,
+						currentTransform.c,
+						currentTransform.d,
+						currentTransform.y
+					);
+					domElement.style.transform = `matrix(${transformMatrix.toCSSMatrix()})`;
+				}
 
 				// Apply size
 				if (typeof width === "number") {
-					element.style.width = `${width}px`;
+					domElement.style.width = `${width}px`;
 				} else {
-					element.style.width = width;
+					domElement.style.width = width;
 				}
 				if (typeof height === "number") {
-					element.style.height = `${height}px`;
+					domElement.style.height = `${height}px`;
 				} else {
-					element.style.height = height;
+					domElement.style.height = height;
 				}
 
 				itemInstance.current = {
-					element,
+					element: domElement,
 					draggable: (options = {}) => {
 						if (isDraggable) {
-							element.style.cursor = "move";
-							element.draggable = true;
+							domElement.style.cursor = "move";
+							domElement.draggable = true;
 
 							const handleDragStart = (e: DragEvent) => {
 								e.dataTransfer!.setData("text/plain", "");
 								onDrag?.(e);
 							};
 
-							element.addEventListener("dragstart", handleDragStart);
+							domElement.addEventListener("dragstart", handleDragStart);
 
 							return () => {
-								element.removeEventListener("dragstart", handleDragStart);
-								element.draggable = false;
-								element.style.cursor = "";
+								domElement.removeEventListener("dragstart", handleDragStart);
+								domElement.draggable = false;
+								domElement.style.cursor = "";
 							};
 						}
 						return () => {};
 					},
 					tappable: (options = {}) => {
 						if (isTappable) {
-							element.style.cursor = "pointer";
+							domElement.style.cursor = "pointer";
 
 							const handleClick = (e: MouseEvent) => {
 								onTap?.(e);
 							};
 
-							element.addEventListener("click", handleClick);
+							domElement.addEventListener("click", handleClick);
 
 							return () => {
-								element.removeEventListener("click", handleClick);
-								element.style.cursor = "";
+								domElement.removeEventListener("click", handleClick);
+								domElement.style.cursor = "";
 							};
 						}
 						return () => {};
 					},
 					scalable: (options = {}) => {
 						if (isScalable) {
-							// Implementation would use mouse wheel or touch gestures
 							const handleWheel = (e: WheelEvent) => {
 								e.preventDefault();
 								const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
@@ -195,20 +170,19 @@ export const Item = forwardRef<IItem, ItemProps>(
 								onScale?.(e);
 							};
 
-							element.addEventListener("wheel", handleWheel);
+							domElement.addEventListener("wheel", handleWheel);
 
 							return () => {
-								element.removeEventListener("wheel", handleWheel);
+								domElement.removeEventListener("wheel", handleWheel);
 							};
 						}
 						return () => {};
 					},
 					rotatable: (options = {}) => {
 						if (isRotatable) {
-							// Implementation would use touch gestures or keyboard
 							const handleKeyDown = (e: KeyboardEvent) => {
 								if (e.key === "r" || e.key === "R") {
-									itemInstance.current?.rotateBy(Math.PI / 8); // 22.5 degrees
+									itemInstance.current?.rotateBy(Math.PI / 8);
 									onRotate?.(e);
 								}
 							};
@@ -222,14 +196,15 @@ export const Item = forwardRef<IItem, ItemProps>(
 						return () => {};
 					},
 					moveTo: (newX: number, newY: number) => {
-						element.style.transform = element.style.transform.replace(
+						updatePosition(newX, newY);
+						domElement.style.transform = domElement.style.transform.replace(
 							/translate\([^)]*\)/,
 							`translate(${newX}px, ${newY}px)`,
 						);
 					},
 					scaleBy: (scaleFactor: number) => {
 						const currentScale = scale * scaleFactor;
-						element.style.transform = element.style.transform.replace(
+						domElement.style.transform = domElement.style.transform.replace(
 							/scale\([^)]*\)/,
 							`scale(${currentScale})`,
 						);
@@ -237,22 +212,16 @@ export const Item = forwardRef<IItem, ItemProps>(
 					},
 					rotateBy: (angle: number) => {
 						const currentRotation = rotation + angle;
-						element.style.transform = element.style.transform.replace(
+						domElement.style.transform = domElement.style.transform.replace(
 							/rotate\([^)]*\)/,
 							`rotate(${currentRotation}rad)`,
 						);
 						onRotate?.({ rotation: currentRotation });
 					},
 					animateOnce: (animation: any) => {
-						// Implementation would use requestAnimationFrame for smooth animations
 						console.log("animateOnce", animation);
 					},
 				};
-
-				// Add to viewport if available
-				if (viewport) {
-					viewport.addChild(itemInstance.current);
-				}
 
 				// Initialize interactions
 				const cleanupDraggable = itemInstance.current.draggable();
@@ -261,43 +230,30 @@ export const Item = forwardRef<IItem, ItemProps>(
 				const cleanupRotatable = itemInstance.current.rotatable();
 
 				return () => {
-					// Cleanup interactions
 					cleanupDraggable?.();
 					cleanupTappable?.();
 					cleanupScalable?.();
 					cleanupRotatable?.();
-
-					// Remove from viewport
-					if (viewport && itemInstance.current) {
-						viewport.removeChild(itemInstance.current);
-					}
 				};
 			}
 		}, [
-			viewport,
+			element,
 			className,
 			isDraggable,
 			isTappable,
 			isScalable,
 			isRotatable,
-			isHoldable,
-			isApproachable,
 			x,
 			y,
 			width,
 			height,
 			rotation,
 			scale,
-			enableGestures,
-			enableDnd,
-			dndId,
+			updatePosition,
 			onTap,
 			onDrag,
 			onScale,
 			onRotate,
-			onHold,
-			onApproach,
-			gestureOptions,
 		]);
 
 		// Expose item API
@@ -307,9 +263,7 @@ export const Item = forwardRef<IItem, ItemProps>(
 			<div
 				ref={itemRef}
 				className={`affine-item ${className}`}
-				data-item-id={`item-${Math.random().toString(36).substr(2, 9)}`}
-				{...(enableGestures ? gestureBind() : {})}
-				{...dndAttributes}
+				data-item-id={itemId}
 			>
 				{children}
 			</div>
