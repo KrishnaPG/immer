@@ -98,58 +98,6 @@ export const spaceActions = {
 	},
 };
 
-/**
- * Store actions for managing viewports
- */
-export const viewportActions = {
-	createViewport: (
-		id: TViewportId,
-		spaceId: TSpaceId,
-		container: HTMLElement,
-	): IViewport => {
-		const space = store.spaces.get(spaceId);
-		if (!space) {
-			throw new Error(`Space with id ${spaceId} not found`);
-		}
-
-		const viewport: IViewport = {
-			id,
-			space,
-			camera: {
-				position: new Vector2D(new Basis(AffineTransform.identity()), {
-					x: 0 as TCoordinate,
-					y: 0 as TCoordinate,
-				}),
-				rotation: 0 as TAngle,
-				zoom: 1 as TScale,
-				projection: "orthographic",
-			},
-			container,
-		};
-
-		store.viewports.set(id, viewport);
-
-		if (!store.activeViewport) {
-			store.activeViewport = id;
-		}
-
-		return viewport;
-	},
-
-	removeViewport: (id: TViewportId): void => {
-		store.viewports.delete(id);
-
-		if (store.activeViewport === id) {
-			store.activeViewport = store.viewports.keys().next().value || null;
-		}
-	},
-
-	setActiveViewport: (id: TViewportId): void => {
-		if (store.viewports.has(id)) {
-			store.activeViewport = id;
-		}
-	},
-};
 
 /**
  * Store actions for managing elements
@@ -222,6 +170,76 @@ export const elementActions = {
 		const element = store.elements.get(id);
 		if (element) {
 			element.transform = transform.getRaw() as unknown as TAffineTransform;
+		}
+	},
+};
+
+/**
+ * Store actions for managing viewports
+ */
+export const viewportActions = {
+	createViewport: (
+		id: TViewportId,
+		spaceId: TSpaceId,
+		container: HTMLElement,
+	): IViewport => {
+		const space = store.spaces.get(spaceId);
+		if (!space) {
+			throw new Error(`Space with id ${spaceId} not found`);
+		}
+
+		const viewport: IViewport = {
+			id,
+			space,
+			camera: {
+				position: new Vector2D(new Basis(AffineTransform.identity()), {
+					x: 0 as TCoordinate,
+					y: 0 as TCoordinate,
+				}),
+				rotation: 0 as TAngle,
+				zoom: 1 as TScale,
+				projection: "orthographic",
+			},
+			container,
+		};
+
+		store.viewports.set(id, viewport);
+
+		if (!store.activeViewport) {
+			store.activeViewport = id;
+		}
+
+		return viewport;
+	},
+
+	removeViewport: (id: TViewportId): void => {
+		store.viewports.delete(id);
+
+		if (store.activeViewport === id) {
+			store.activeViewport = store.viewports.keys().next().value || null;
+		}
+	},
+
+	setActiveViewport: (id: TViewportId): void => {
+		if (store.viewports.has(id)) {
+			store.activeViewport = id;
+		}
+	},
+
+	getViewport: (id: TViewportId): IViewport | undefined => {
+		return store.viewports.get(id);
+	},
+
+	getActiveViewport: (): IViewport | undefined => {
+		return store.activeViewport
+			? store.viewports.get(store.activeViewport)
+			: undefined;
+	},
+
+	updateCamera: (id: TViewportId, updates: Partial<unknown>): void => {
+		const viewport = store.viewports.get(id);
+		if (viewport) {
+			Object.assign(viewport.camera, updates);
 		}
 	},
 };

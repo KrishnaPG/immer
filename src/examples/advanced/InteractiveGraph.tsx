@@ -62,14 +62,17 @@ export const InteractiveGraph: React.FC = () => {
 
 	const handleZoomIn = useCallback(() => {
 		setZoomLevel((prev) => Math.min(prev * 1.5, 5));
+		console.log('Zoom in clicked');
 	}, []);
 
 	const handleZoomOut = useCallback(() => {
 		setZoomLevel((prev) => Math.max(prev / 1.5, 0.1));
+		console.log('Zoom out clicked');
 	}, []);
 
 	const handleZoomReset = useCallback(() => {
 		setZoomLevel(1);
+		console.log('Zoom reset clicked');
 	}, []);
 
 	return (

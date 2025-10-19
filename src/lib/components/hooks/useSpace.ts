@@ -1,13 +1,14 @@
 import { useMemo } from "react";
-import { useSnapshot } from "valtio";
 import { Basis } from "@/lib/geometry/Basis";
 import { Point } from "@/lib/geometry/Point";
 import { AffineTransform } from "@/lib/geometry/transform";
-import { spaceActions, store } from "@/lib/state/store";
+import { useBasis } from "@/lib/hooks/useBasis";
+import { useEntityBase } from "@/lib/hooks/useEntityBase";
+import type { TSpaceId } from "@/types/branded.types";
 
 export interface UseSpaceReturn {
 	space: any;
-	basis: Basis;
+	basis: any;
 	at: (x: number, y: number, z?: number) => Point;
 	atAnchor: () => Point;
 	atMid: () => Point;
@@ -17,80 +18,14 @@ export interface UseSpaceReturn {
 }
 
 export const useSpace = (id?: string): UseSpaceReturn => {
-	const snapshot = useSnapshot(store);
+	// Use entity base for space management
+	const { entity: space } = useEntityBase({
+		id,
+		entityType: "space",
+	});
 
-	// Generate space ID if not provided
-	const spaceId = useMemo(
-		() => id || `space-${Math.random().toString(36).substr(2, 9)}`,
-		[id],
-	);
-
-	// Get or create space in store
-	const space = useMemo(() => {
-		if (!snapshot.spaces.has(spaceId as any)) {
-			spaceActions.createSpace(spaceId as any);
-		}
-		return snapshot.spaces.get(spaceId as any);
-	}, [spaceId, snapshot.spaces]);
-
-	// Create basis from space transform
-	const basis = useMemo(() => {
-		if (space) {
-			const raw = space.transform as any;
-			const transformMatrix = new AffineTransform(raw.a, raw.b, raw.x, raw.c, raw.d, raw.y);
-			return new Basis(transformMatrix);
-		}
-		return new Basis(AffineTransform.identity());
-	}, [space]);
-
-	// Coordinate system methods
-	const at = useMemo(
-		() =>
-			(x: number, y: number, z = 0) => {
-				return new Point(basis, { x, y, z });
-			},
-		[basis],
-	);
-
-	const atAnchor = useMemo(
-		() => () => {
-			return new Point(basis, { x: 0, y: 0, z: 0 });
-		},
-		[basis],
-	);
-
-	const atMid = useMemo(
-		() => () => {
-			return new Point(basis, { x: 0, y: 0 }); // Will be updated by component
-		},
-		[basis],
-	);
-
-	const polarOffset = useMemo(
-		() => (distance: number, angle: number) => {
-			const x = distance * Math.cos(angle);
-			const y = distance * Math.sin(angle);
-			return new Point(basis, { x, y });
-		},
-		[basis],
-	);
-
-	const transformPoint = useMemo(
-		() => (point: Point) => {
-			return basis.transformPoint(point);
-		},
-		[basis],
-	);
-
-	const untransformPoint = useMemo(
-		() => (point: Point) => {
-			return basis.untransformPoint(point);
-		},
-		[basis],
-	);
-
-	return {
-		space,
+	// Use basis hook for geometry operations
+	const {
 		basis,
 		at,
 		atAnchor,
@@ -98,5 +33,33 @@ export const useSpace = (id?: string): UseSpaceReturn => {
 		polarOffset,
 		transformPoint,
 		untransformPoint,
+	} = useBasis({
+		transform: space?.transform,
+		fallbackToIdentity: true,
+	});
+
+	// Create fallback functions that always work
+	const fallbackBasis = new Basis(AffineTransform.identity());
+	const fallbackAt = (x: number, y: number, z = 0) =>
+		new Point(fallbackBasis, { x, y, z });
+	const fallbackAtAnchor = () => new Point(fallbackBasis, { x: 0, y: 0, z: 0 });
+	const fallbackAtMid = () => new Point(fallbackBasis, { x: 0, y: 0 });
+	const fallbackPolarOffset = (distance: number, angle: number) => {
+		const x = distance * Math.cos(angle);
+		const y = distance * Math.sin(angle);
+		return new Point(fallbackBasis, { x, y });
+	};
+	const fallbackTransformPoint = (point: Point) => point;
+	const fallbackUntransformPoint = (point: Point) => point;
+
+	return {
+		space,
+		basis: basis || fallbackBasis,
+		at: at || fallbackAt,
+		atAnchor: atAnchor || fallbackAtAnchor,
+		atMid: atMid || fallbackAtMid,
+		polarOffset: polarOffset || fallbackPolarOffset,
+		transformPoint: transformPoint || fallbackTransformPoint,
+		untransformPoint: untransformPoint || fallbackUntransformPoint,
 	};
 };

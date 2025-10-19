@@ -4,7 +4,7 @@ import type React from "react";
 import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import type { Basis } from "@/lib/geometry/Basis";
 import { AffineTransform } from "@/lib/geometry/transform";
-import { useSpace } from "./hooks/useSpace";
+import { useSpace } from "@/lib/hooks";
 
 export interface SpaceProps {
 	children: React.ReactNode;

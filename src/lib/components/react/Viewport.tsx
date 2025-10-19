@@ -1,16 +1,10 @@
 import { motion } from "framer-motion";
 import type React from "react";
-import {
-	forwardRef,
-	useEffect,
-	useImperativeHandle,
-	useRef,
-	useState,
-} from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { Basis } from "@/lib/geometry/Basis";
-import { Point } from "@/lib/geometry/Point";
 import { AffineTransform } from "@/lib/geometry/transform";
 import { Vector } from "@/lib/geometry/vector";
+import { useViewport } from "@/lib/hooks";
 import styles from "@/styles/components/Viewport.module.css";
 import { ZoomControl } from "./ZoomControl";
 
@@ -40,46 +34,51 @@ export const Viewport = forwardRef<Basis, ViewportProps>(
 		ref,
 	) => {
 		const viewportRef = useRef<HTMLDivElement>(null);
-		const [viewportBasis, setViewportBasis] = useState(new Basis());
-		const [isPanning, setIsPanning] = useState(false);
-		const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
+		const { basis, viewportStore } = useViewport();
+		const { snapshot, actions } = viewportStore;
 
 		// Initialize viewport basis
 		useEffect(() => {
-			setViewportBasis(new Basis());
+			actions.setViewportBasis(viewportStore.store, new Basis());
 		}, []);
 
 		// Expose viewport basis API
-		useImperativeHandle(ref, () => viewportBasis);
+		useImperativeHandle(ref, () => basis);
 
 		// Handle panning
 		const handleMouseDown = (e: React.MouseEvent) => {
 			if (!pannable) return;
 
-			setIsPanning(true);
-			setLastPanPoint({ x: e.clientX, y: e.clientY });
+			actions.setIsPanning(viewportStore.store, true);
+			actions.setLastPanPoint(viewportStore.store, {
+				x: e.clientX,
+				y: e.clientY,
+			});
 			e.preventDefault();
 		};
 
 		const handleMouseMove = (e: MouseEvent) => {
-			if (!isPanning || !pannable) return;
+			if (!snapshot.isPanning || !pannable) return;
 
-			const deltaX = e.clientX - lastPanPoint.x;
-			const deltaY = e.clientY - lastPanPoint.y;
+			const deltaX = e.clientX - snapshot.lastPanPoint.x;
+			const deltaY = e.clientY - snapshot.lastPanPoint.y;
 
 			if (Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0) {
-				const translation = new Vector(viewportBasis, { x: deltaX, y: deltaY });
+				const translation = new Vector(basis, { x: deltaX, y: deltaY });
 				const newTransform = AffineTransform.translateBy(translation);
 				const newBasis = new Basis(newTransform);
 
-				setViewportBasis(newBasis);
-				setLastPanPoint({ x: e.clientX, y: e.clientY });
+				actions.setViewportBasis(viewportStore.store, newBasis);
+				actions.setLastPanPoint(viewportStore.store, {
+					x: e.clientX,
+					y: e.clientY,
+				});
 				onViewportChange?.(newBasis);
 			}
 		};
 
 		const handleMouseUp = () => {
-			setIsPanning(false);
+			actions.setIsPanning(viewportStore.store, false);
 		};
 
 		// Handle zoom
@@ -90,71 +89,73 @@ export const Viewport = forwardRef<Basis, ViewportProps>(
 
 			const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
 			const scaleTransform = AffineTransform.scaleBy(zoomFactor);
-			const newTransform = viewportBasis.transform.compose(scaleTransform);
+			const newTransform = basis.transform.compose(scaleTransform);
 			const newBasis = new Basis(newTransform);
 
-			setViewportBasis(newBasis);
+			actions.setViewportBasis(viewportStore.store, newBasis);
 			onViewportChange?.(newBasis);
 		};
 
 		// Keyboard navigation
+		const handleKeyDown = (e: KeyboardEvent) => {
+			let transform = basis.transform;
+
+			switch (e.key) {
+				case "ArrowUp":
+				case "w":
+				case "W":
+					transform = AffineTransform.translateBy(
+						new Vector(basis, { x: 0, y: -10 }),
+					);
+					break;
+				case "ArrowDown":
+				case "s":
+				case "S":
+					transform = AffineTransform.translateBy(
+						new Vector(basis, { x: 0, y: 10 }),
+					);
+					break;
+				case "ArrowLeft":
+				case "a":
+				case "A":
+					transform = AffineTransform.translateBy(
+						new Vector(basis, { x: -10, y: 0 }),
+					);
+					break;
+				case "ArrowRight":
+				case "d":
+				case "D":
+					transform = AffineTransform.translateBy(
+						new Vector(basis, { x: 10, y: 0 }),
+					);
+					break;
+				case "+":
+				case "=":
+					transform = transform.compose(AffineTransform.scaleBy(1.1));
+					break;
+				case "-":
+					transform = transform.compose(AffineTransform.scaleBy(0.9));
+					break;
+			}
+
+			if (transform !== basis.transform) {
+				const newBasis = new Basis(transform);
+				actions.setViewportBasis(viewportStore.store, newBasis);
+				onViewportChange?.(newBasis);
+			}
+		};
+
+		// Set up keyboard event listeners
 		useEffect(() => {
 			if (!focusable) return;
 
-			const handleKeyDown = (e: KeyboardEvent) => {
-				let transform = viewportBasis.transform;
-
-				switch (e.key) {
-					case "ArrowUp":
-					case "w":
-					case "W":
-						transform = AffineTransform.translateBy(
-							new Vector(viewportBasis, { x: 0, y: -10 }),
-						);
-						break;
-					case "ArrowDown":
-					case "s":
-					case "S":
-						transform = AffineTransform.translateBy(
-							new Vector(viewportBasis, { x: 0, y: 10 }),
-						);
-						break;
-					case "ArrowLeft":
-					case "a":
-					case "A":
-						transform = AffineTransform.translateBy(
-							new Vector(viewportBasis, { x: -10, y: 0 }),
-						);
-						break;
-					case "ArrowRight":
-					case "d":
-					case "D":
-						transform = AffineTransform.translateBy(
-							new Vector(viewportBasis, { x: 10, y: 0 }),
-						);
-						break;
-					case "+":
-					case "=":
-						transform = transform.compose(AffineTransform.scaleBy(1.1));
-						break;
-					case "-":
-						transform = transform.compose(AffineTransform.scaleBy(0.9));
-						break;
-				}
-
-				if (transform !== viewportBasis.transform) {
-					const newBasis = new Basis(transform);
-					setViewportBasis(newBasis);
-					onViewportChange?.(newBasis);
-				}
-			};
-
 			window.addEventListener("keydown", handleKeyDown);
 			return () => window.removeEventListener("keydown", handleKeyDown);
-		}, [viewportBasis, focusable, onViewportChange]);
+		}, [basis, focusable, onViewportChange]);
 
+		// Set up mouse event listeners for panning
 		useEffect(() => {
-			if (isPanning) {
+			if (snapshot.isPanning) {
 				document.addEventListener("mousemove", handleMouseMove);
 				document.addEventListener("mouseup", handleMouseUp);
 				return () => {
@@ -162,7 +163,7 @@ export const Viewport = forwardRef<Basis, ViewportProps>(
 					document.removeEventListener("mouseup", handleMouseUp);
 				};
 			}
-		}, [isPanning]);
+		}, [snapshot.isPanning]);
 
 		return (
 			<motion.div
@@ -176,7 +177,7 @@ export const Viewport = forwardRef<Basis, ViewportProps>(
 				<motion.div
 					className={styles.hyperspace}
 					style={{
-						transform: `matrix(${viewportBasis.transform.toCSSMatrix()})`,
+						transform: `matrix(${basis.transform.toCSSMatrix()})`,
 						transformOrigin: "0 0",
 					}}
 				>
@@ -184,24 +185,29 @@ export const Viewport = forwardRef<Basis, ViewportProps>(
 				</motion.div>
 
 				<ZoomControl
+					position="bottom-right"
+					size="medium"
 					onZoomIn={() => {
-						const newTransform = viewportBasis.transform.compose(
+						console.log("Viewport zoom in clicked");
+						const newTransform = basis.transform.compose(
 							AffineTransform.scaleBy(1.2),
 						);
 						const newBasis = new Basis(newTransform);
-						setViewportBasis(newBasis);
+						actions.setViewportBasis(viewportStore.store, newBasis);
 						onViewportChange?.(newBasis);
 					}}
 					onZoomOut={() => {
-						const newTransform = viewportBasis.transform.compose(
+						console.log("Viewport zoom out clicked");
+						const newTransform = basis.transform.compose(
 							AffineTransform.scaleBy(0.8),
 						);
 						const newBasis = new Basis(newTransform);
-						setViewportBasis(newBasis);
+						actions.setViewportBasis(viewportStore.store, newBasis);
 						onViewportChange?.(newBasis);
 					}}
 					onReset={() => {
-						setViewportBasis(new Basis());
+						console.log("Viewport zoom reset clicked");
+						actions.resetViewport(viewportStore.store);
 						onViewportChange?.(new Basis());
 					}}
 				/>

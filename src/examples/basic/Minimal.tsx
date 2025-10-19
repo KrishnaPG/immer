@@ -27,7 +27,7 @@ export const Minimal: React.FC = () => {
 						</div>
 					</Item>
 
-					<Item x={100} y={-50}>
+					<Item x={100} y={-50} spaceId="main-space">
 						<div
 							style={{
 								width: "80px",
@@ -47,7 +47,7 @@ export const Minimal: React.FC = () => {
 						</div>
 					</Item>
 
-					<Item x={-50} y={100}>
+					<Item x={-50} y={100} spaceId="main-space">
 						<div
 							style={{
 								width: "80px",
@@ -67,7 +67,7 @@ export const Minimal: React.FC = () => {
 						</div>
 					</Item>
 
-					<Item x={50} y={100}>
+					<Item x={50} y={100} spaceId="main-space">
 						<div
 							style={{
 								width: "80px",

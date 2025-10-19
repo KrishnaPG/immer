@@ -3,8 +3,6 @@
  * Provides interactive 2D spaces with affine transformations
  */
 
-// Context and providers
-export { SpatialProvider, useSpatialContext } from "../context/SpatialContext";
 // Re-export hooks for convenience
 export * from "./hooks";
 // Valtio store integration hooks

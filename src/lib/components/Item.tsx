@@ -1,8 +1,16 @@
 import { clsx } from "clsx";
 import type React from "react";
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import {
+	forwardRef,
+	useEffect,
+	useImperativeHandle,
+	useMemo,
+	useRef,
+} from "react";
 import { AffineTransform } from "@/lib/geometry/transform";
-import { useItem } from "./hooks/useItem";
+import { useItem } from "@/lib/hooks";
+import { Vector } from "../geometry";
+import { Basis } from "../geometry/Basis";
 
 export interface ItemProps {
 	children: React.ReactNode;
@@ -85,7 +93,13 @@ export const Item = forwardRef<IItem, ItemProps>(
 		const itemInstance = useRef<IItem | null>(null);
 
 		// Use Valtio-based useItem hook
-		const { elementId: itemId, element, basis, updatePosition, updateTransform } = useItem(spaceId);
+		const {
+			elementId: itemId,
+			element,
+			basis,
+			updatePosition,
+			updateTransform,
+		} = useItem(spaceId);
 
 		// Initialize item instance
 		useEffect(() => {
@@ -97,20 +111,19 @@ export const Item = forwardRef<IItem, ItemProps>(
 				domElement.style.position = "absolute";
 				domElement.style.transformOrigin = "center";
 
-				// Apply initial transform using Valtio state
-				if (domElement && element) {
-					const valtioElement = element; // Valtio element from useItem hook
-					const currentTransform = valtioElement.transform as any;
-					const transformMatrix = new AffineTransform(
-						currentTransform.a,
-						currentTransform.b,
-						currentTransform.x,
-						currentTransform.c,
-						currentTransform.d,
-						currentTransform.y
-					);
-					domElement.style.transform = `matrix(${transformMatrix.toCSSMatrix()})`;
-				}
+				// Create initial transform with translation based on x,y props
+				const initialTransform = AffineTransform.translateBy(
+					new Vector(new Basis(AffineTransform.identity()), {
+						x: x as number,
+						y: y as number,
+					}),
+				);
+
+				// Update the element's transform in the store
+				updateTransform(initialTransform);
+
+				// Apply initial transform to DOM
+				domElement.style.transform = `matrix(${initialTransform.toCSSMatrix()})`;
 
 				// Apply size
 				if (typeof width === "number") {
@@ -249,7 +262,10 @@ export const Item = forwardRef<IItem, ItemProps>(
 			height,
 			rotation,
 			scale,
+			x,
+			y,
 			updatePosition,
+			updateTransform,
 			onTap,
 			onDrag,
 			onScale,
