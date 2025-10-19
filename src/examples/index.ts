@@ -10,13 +10,13 @@ export interface ExampleInfo {
 	title: string;
 	description: string;
 	category:
-	| "basic"
-	| "advanced"
-	| "interactions"
-	| "layouts"
-	| "animations"
-	| "data-visualization"
-	| "coordinate";
+		| "basic"
+		| "advanced"
+		| "interactions"
+		| "layouts"
+		| "animations"
+		| "data-visualization"
+		| "coordinate";
 	component: React.ComponentType;
 	difficulty: "beginner" | "intermediate" | "advanced";
 	tags: string[];
@@ -82,7 +82,7 @@ export const examples: ExampleInfo[] = [
 		component: Grid,
 		difficulty: "beginner",
 		tags: ["coordinate", "grid", "spatial", "basics", "visualization"],
-	},
+	}
 ];
 
 export const getExamplesByCategory = (category: ExampleInfo["category"]) => {

@@ -5,9 +5,9 @@ export const Minimal: React.FC = () => {
 	return (
 		<div style={{ width: "100%", height: "400px" }}>
 			<Viewport width="100%" height="100%">
-				<Space>
+				<Space id="main-space">
 					{/* Simple colored squares demonstrating basic positioning */}
-					<Item x={-100} y={-50}>
+					<Item x={-100} y={-50} spaceId="main-space">
 						<div
 							style={{
 								width: "80px",

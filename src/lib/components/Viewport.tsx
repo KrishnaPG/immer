@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type React from "react";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { Basis } from "@/lib/geometry/Basis";
@@ -52,7 +53,7 @@ export const Viewport = forwardRef<ViewportClass, ViewportProps>(
 		return (
 			<div
 				ref={viewportRef}
-				className={`affine-viewport ${className}`}
+				className={clsx("affine-viewport", className)}
 				style={{ width, height }}
 			>
 				<div

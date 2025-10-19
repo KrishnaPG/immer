@@ -1,9 +1,9 @@
+import { clsx } from "clsx";
 import { motion } from "framer-motion";
 import type React from "react";
 import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import type { Basis } from "@/lib/geometry/Basis";
 import { AffineTransform } from "@/lib/geometry/transform";
-import styles from "@/styles/components/Space.module.css";
 import { useSpace } from "./hooks/useSpace";
 
 export interface SpaceProps {
@@ -35,7 +35,7 @@ export const Space = forwardRef<Basis, SpaceProps>(
 		return (
 			<motion.div
 				ref={spaceRef}
-				className={`${styles.space} ${className}`}
+				className={clsx("affine-space", className)}
 				style={{
 					transform: `matrix(${currentTransform.toCSSMatrix()})`,
 					transformOrigin: "0 0",

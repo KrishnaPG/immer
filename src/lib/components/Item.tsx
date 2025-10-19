@@ -19,6 +19,7 @@ export interface ItemProps {
 	height?: number | string;
 	rotation?: number;
 	scale?: number;
+	spaceId?: string;
 	// Enhanced interaction props
 	enableGestures?: boolean;
 	enableDnd?: boolean;
@@ -66,6 +67,7 @@ export const Item = forwardRef<IItem, ItemProps>(
 			height = "auto",
 			rotation = 0,
 			scale = 1,
+			spaceId,
 			enableGestures = true,
 			enableDnd = false,
 			dndId,
@@ -83,7 +85,7 @@ export const Item = forwardRef<IItem, ItemProps>(
 		const itemInstance = useRef<IItem | null>(null);
 
 		// Use Valtio-based useItem hook
-		const { elementId: itemId, element, basis, updatePosition, updateTransform } = useItem();
+		const { elementId: itemId, element, basis, updatePosition, updateTransform } = useItem(spaceId);
 
 		// Initialize item instance
 		useEffect(() => {
@@ -243,8 +245,6 @@ export const Item = forwardRef<IItem, ItemProps>(
 			isTappable,
 			isScalable,
 			isRotatable,
-			x,
-			y,
 			width,
 			height,
 			rotation,
@@ -262,7 +262,7 @@ export const Item = forwardRef<IItem, ItemProps>(
 		return (
 			<div
 				ref={itemRef}
-				className={`affine-item ${className}`}
+				className={clsx("affine-item", className)}
 				data-item-id={itemId}
 			>
 				{children}
