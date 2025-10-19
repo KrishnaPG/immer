@@ -83,12 +83,17 @@ export type TViewportId = Branded<string, "ViewportId">;
 export type TTransformId = Branded<string, "TransformId">;
 
 // Geometry types
-export type TCoordinate = Branded<number, "Coordinate">;
 export type TAngle = Branded<number, "Angle">;
 export type TScale = Branded<number, "Scale">;
 export type TDistance = Branded<number, "Distance">;
 export type TWidth  = Branded<TDistance, "Width">;
 export type THeight = Branded<TDistance, "Height">;
+
+export type TCoordinate = Branded<number, "Coordinate">;
+export type TCoordinateX = Branded<TCoordinate, "CoordinateX">;
+export type TCoordinateY = Branded<TCoordinate, "CoordinateY">;
+export type TCoordinateZ = Branded<TCoordinate, "CoordinateZ">;
+
 
 // Vector types
 export type TVector2D = Branded<[TCoordinate, TCoordinate], "Vector2D">;

@@ -118,8 +118,11 @@
    ========================================================================== */
 
 .affine-item {
-  /* Items are always flat. */
-  transform-style: flat;
+   /* Items are always flat. */
+   transform-style: flat;
+
+   /* Disable default touch actions to prevent conflicts with gestures */
+   touch-action: none;
 }
 
 /* ==========================================================================

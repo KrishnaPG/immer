@@ -134,7 +134,10 @@ export class Viewport implements IViewport {
   }
 
   public removeChild(child: any): void {
-    this.hyperspace.removeChild(child.element || child)
+    const childElement = child.element || child;
+    if (this.hyperspace.contains(childElement)) {
+      this.hyperspace.removeChild(childElement);
+    }
   }
 
   public renderTransform(): void {
@@ -267,7 +270,10 @@ export class Viewport implements IViewport {
 
   public removeControl(control: any): void {
     if (this.controls) {
-      this.controls.removeChild(control.element || control)
+      const controlElement = control.element || control;
+      if (this.controls.contains(controlElement)) {
+        this.controls.removeChild(controlElement);
+      }
     }
   }
 

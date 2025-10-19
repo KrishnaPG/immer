@@ -18,6 +18,8 @@ export {
 } from "./hooks/useSpatialState";
 export { useViewportIntegration } from "./hooks/useViewportIntegration";
 export { Item } from "./Item.tsx";
+// React components
+export { Arc, Edge, Node, ZoomControl } from "./react";
 export { Space } from "./Space.tsx";
 // Core React components
 export { Viewport } from "./Viewport.tsx";

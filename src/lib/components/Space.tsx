@@ -1,118 +1,126 @@
-import { clsx } from "clsx";
+import { motion } from "framer-motion";
 import type React from "react";
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { useSpatialContext } from "../context/SpatialContext";
+import {
+	createContext,
+	forwardRef,
+	useContext,
+	useEffect,
+	useImperativeHandle,
+	useRef,
+	useState,
+} from "react";
+import { Basis } from "@/lib/geometry/Basis";
+import { Point } from "@/lib/geometry/Point";
+import { AffineTransform } from "@/lib/geometry/transform";
+import { Vector } from "@/lib/geometry/vector";
+import styles from "@/styles/components/Space.module.css";
 
 export interface SpaceProps {
 	children: React.ReactNode;
+	transform?: AffineTransform;
 	className?: string;
-	id?: string;
+	onTransform?: (transform: AffineTransform) => void;
 }
 
-export interface ISpace {
-	element: HTMLElement;
-	id: string;
-	addChild: (child: any) => void;
-	removeChild: (child: any) => void;
-	getBoundingBox: () => any;
-	transformBy: (transform: any) => void;
-	translateBy: (x: number, y: number) => void;
-	scaleBy: (scale: number) => void;
-	rotateBy: (angle: number) => void;
+export interface SpaceContextValue {
+	space: Basis;
+	at: (x: number, y: number, z?: number) => Point;
+	atAnchor: () => Point;
+	atMid: () => Point;
+	polarOffset: (distance: number, angle: number) => Point;
+	transformPoint: (point: Point) => Point;
+	untransformPoint: (point: Point) => Point;
 }
 
-export const Space = forwardRef<ISpace, SpaceProps>(
+export const SpaceContext = createContext<SpaceContextValue | null>(null);
+
+export const useSpace = () => {
+	const context = useContext(SpaceContext);
+	if (!context) {
+		throw new Error("useSpace must be used within a Space component");
+	}
+	return context;
+};
+
+export const Space = forwardRef<Basis, SpaceProps>(
 	(
 		{
 			children,
+			transform = AffineTransform.identity(),
 			className = "",
-			id = `space-${Math.random().toString(36).substr(2, 9)}`,
+			onTransform,
 		},
 		ref,
 	) => {
 		const spaceRef = useRef<HTMLDivElement>(null);
-		const spaceInstance = useRef<ISpace | null>(null);
-		const { viewport, currentSpace } = useSpatialContext();
+		const [basis, setBasis] = useState(new Basis(transform));
+		const [currentTransform, setCurrentTransform] = useState(transform);
 
-		// Initialize space instance
+		// Initialize basis
 		useEffect(() => {
-			if (spaceRef.current && !spaceInstance.current) {
-				const element = spaceRef.current;
+			setBasis(new Basis(transform));
+			setCurrentTransform(transform);
+		}, [transform]);
 
-				// Create space instance with zero size for pointer event delegation
-				element.style.width = "0px";
-				element.style.height = "0px";
-				element.style.position = "absolute";
-				element.classList.add(clsx("affine-space", className));
+		// Expose basis API
+		useImperativeHandle(ref, () => basis);
 
-				spaceInstance.current = {
-					element,
-					id,
-					addChild: (child: any) => {
-						element.appendChild(child.element || child);
-					},
-					removeChild: (child: any) => {
-						element.removeChild(child.element || child);
-					},
-					getBoundingBox: () => {
-						// Calculate bounding box of all children
-						const rect = element.getBoundingClientRect();
-						return {
-							left: rect.left,
-							top: rect.top,
-							width: rect.width,
-							height: rect.height,
-							right: rect.right,
-							bottom: rect.bottom,
-						};
-					},
-					transformBy: (transform: any) => {
-						// Apply affine transform to space
-						const currentTransform = element.style.transform || "";
-						element.style.transform = `${currentTransform} ${transform}`.trim();
-					},
-					translateBy: (x: number, y: number) => {
-						const currentTransform = element.style.transform || "";
-						element.style.transform =
-							`${currentTransform} translate(${x}px, ${y}px)`.trim();
-					},
-					scaleBy: (scale: number) => {
-						const currentTransform = element.style.transform || "";
-						element.style.transform =
-							`${currentTransform} scale(${scale})`.trim();
-					},
-					rotateBy: (angle: number) => {
-						const currentTransform = element.style.transform || "";
-						element.style.transform =
-							`${currentTransform} rotate(${angle}rad)`.trim();
-					},
-				};
+		const handleTransformChange = (newTransform: AffineTransform) => {
+			setCurrentTransform(newTransform);
+			setBasis(new Basis(newTransform));
+			onTransform?.(newTransform);
+		};
 
-				// Add to viewport if available
-				if (viewport) {
-					viewport.addChild(spaceInstance.current);
-				}
+		// Coordinate system methods
+		const at = (x: number, y: number, z = 0) => {
+			return new Point(basis, { x, y, z });
+		};
+
+		const atAnchor = () => {
+			return new Point(basis, { x: 0, y: 0, z: 0 });
+		};
+
+		const atMid = () => {
+			if (spaceRef.current) {
+				const rect = spaceRef.current.getBoundingClientRect();
+				return new Point(basis, { x: rect.width / 2, y: rect.height / 2 });
 			}
+			return new Point(basis, { x: 0, y: 0 });
+		};
 
-			return () => {
-				// Cleanup
-				if (spaceInstance.current && viewport) {
-					viewport.removeChild(spaceInstance.current);
-				}
-			};
-		}, [viewport, className, id]);
-
-		// Expose space API
-		useImperativeHandle(ref, () => spaceInstance.current!);
+		const polarOffset = (distance: number, angle: number) => {
+			const x = distance * Math.cos(angle);
+			const y = distance * Math.sin(angle);
+			return new Point(basis, { x, y });
+		};
 
 		return (
-			<div
+			<motion.div
 				ref={spaceRef}
-				className={clsx("affine-space", className)}
-				data-space-id={id}
+				className={`${styles.space} ${className}`}
+				style={{
+					transform: `matrix(${currentTransform.toCSSMatrix()})`,
+					transformOrigin: "0 0",
+				}}
+				animate={{
+					scale: currentTransform.getScale(),
+					rotate: currentTransform.getRotation(),
+				}}
 			>
-				{children}
-			</div>
+				<SpaceContext.Provider
+					value={{
+						space: basis,
+						at,
+						atAnchor,
+						atMid,
+						polarOffset,
+						transformPoint: (point: Point) => basis.transformPoint(point),
+						untransformPoint: (point: Point) => basis.untransformPoint(point),
+					}}
+				>
+					{children}
+				</SpaceContext.Provider>
+			</motion.div>
 		);
 	},
 );

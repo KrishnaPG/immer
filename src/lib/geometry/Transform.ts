@@ -1,117 +1,183 @@
 import * as tf from "@tensorflow/tfjs";
-import type { TAngle, TCoordinate, TScale } from "@/types/branded.types";
-import { AffineMatrix } from "./matrix";
-import type { Vector2D } from "./vector";
+import type {
+	TAngle,
+	TCoordinate,
+	TCoordinateX,
+	TCoordinateY,
+	TScale,
+} from "@/types/branded.types";
+import { Basis } from "./Basis";
+import { Point } from "./Point";
+import { Vector } from "./vector";
 
 /**
  * Affine transformation for 2D coordinate systems
  * Combines translation, rotation, and scaling operations
  */
 export class AffineTransform {
-	public readonly matrix: AffineMatrix;
+	readonly a: number; // scale x, shear
+	readonly b: number; // shear, scale y
+	readonly x: number; // translate x
+	readonly c: number; // shear, scale x
+	readonly d: number; // scale y, shear
+	readonly y: number; // translate y
 
-	constructor(matrix: AffineMatrix) {
-		this.matrix = matrix;
+	constructor(a = 1, b = 0, x = 0, c = 0, d = 1, y = 0) {
+		this.a = a;
+		this.b = b;
+		this.x = x;
+		this.c = c;
+		this.d = d;
+		this.y = y;
 	}
 
 	/**
 	 * Create identity transformation
 	 */
 	static identity(): AffineTransform {
-		return new AffineTransform(AffineMatrix.identity());
+		return new AffineTransform(1, 0, 0, 0, 1, 0);
 	}
 
 	/**
 	 * Create translation transformation
 	 */
-	static translation(x: TCoordinate, y: TCoordinate): AffineTransform {
+	static translateBy(vector: Vector): AffineTransform {
 		return new AffineTransform(
-			AffineMatrix.translation(x as number, y as number),
+			1,
+			0,
+			vector.x as number,
+			0,
+			1,
+			vector.y as number,
 		);
 	}
 
 	/**
 	 * Create rotation transformation
 	 */
-	static rotation(angle: TAngle): AffineTransform {
-		return new AffineTransform(AffineMatrix.rotation(angle as number));
+	static rotateBy(angle: number, origin?: Vector): AffineTransform {
+		const cos = Math.cos(angle);
+		const sin = Math.sin(angle);
+
+		if (origin) {
+			const tx =
+				(origin.x as number) -
+				(origin.x as number) * cos +
+				(origin.y as number) * sin;
+			const ty =
+				(origin.y as number) -
+				(origin.x as number) * sin -
+				(origin.y as number) * cos;
+			return new AffineTransform(cos, -sin, tx, sin, cos, ty);
+		}
+
+		return new AffineTransform(cos, -sin, 0, sin, cos, 0);
 	}
 
 	/**
-	 * Create scaling transformation
+	 * Create scale transformation
 	 */
-	static scaling(sx: TScale, sy: TScale): AffineTransform {
-		return new AffineTransform(
-			AffineMatrix.scaling(sx as number, sy as number),
-		);
+	static scaleBy(factor: number, origin?: Vector): AffineTransform {
+		if (origin) {
+			const tx = (origin.x as number) - (origin.x as number) * factor;
+			const ty = (origin.y as number) - (origin.y as number) * factor;
+			return new AffineTransform(factor, 0, tx, 0, factor, ty);
+		}
+
+		return new AffineTransform(factor, 0, 0, 0, factor, 0);
 	}
 
 	/**
 	 * Combine transformations (this * other)
 	 */
 	compose(other: AffineTransform): AffineTransform {
-		const result = this.matrix.multiply(other.matrix);
-		return new AffineTransform(result);
+		return new AffineTransform(
+			this.a * other.a + this.b * other.c,
+			this.a * other.b + this.b * other.d,
+			this.a * other.x + this.b * other.y + this.x,
+			this.c * other.a + this.d * other.c,
+			this.c * other.b + this.d * other.d,
+			this.c * other.x + this.d * other.y + this.y,
+		);
 	}
 
 	/**
-	 * Apply inverse transformation
+	 * Get inverse transform
 	 */
 	inverse(): AffineTransform {
-		const invMatrix = this.matrix.invert();
-		return new AffineTransform(invMatrix);
+		const det = this.a * this.d - this.b * this.c;
+		if (Math.abs(det) < 1e-10) {
+			throw new Error("Transform is not invertible");
+		}
+
+		const invDet = 1 / det;
+		return new AffineTransform(
+			this.d * invDet,
+			-this.b * invDet,
+			(this.b * this.y - this.d * this.x) * invDet,
+			-this.c * invDet,
+			this.a * invDet,
+			(this.c * this.x - this.a * this.y) * invDet,
+		);
 	}
 
 	/**
-	 * Transform a point
+	 * Apply transform to point
 	 */
-	transformPoint(point: Vector2D): Vector2D {
-		return point.transform(this.matrix.tensor);
-	}
-
-	/**
-	 * Transform multiple points
-	 */
-	transformPoints(points: Vector2D[]): Vector2D[] {
-		return points.map((point) => this.transformPoint(point));
-	}
-
-	/**
-	 * Get translation components
-	 */
-	getTranslation(): { x: TCoordinate; y: TCoordinate } {
-		const values = this.matrix.tensor.dataSync();
+	transformPoint(point: { x: number; y: number }): { x: number; y: number } {
 		return {
-			x: values[2] as TCoordinate,
-			y: values[5] as TCoordinate,
+			x: this.a * point.x + this.b * point.y + this.x,
+			y: this.c * point.x + this.d * point.y + this.y,
 		};
+	}
+
+	/**
+	 * Get scale factor
+	 */
+	getScale(): number {
+		const scaleX = Math.sqrt(this.a * this.a + this.c * this.c);
+		const scaleY = Math.sqrt(this.b * this.b + this.d * this.d);
+		return (scaleX + scaleY) / 2;
 	}
 
 	/**
 	 * Get rotation angle
 	 */
-	getRotation(): TAngle {
-		const values = this.matrix.tensor.dataSync();
-		return Math.atan2(values[3], values[0]) as TAngle;
+	getRotation(): number {
+		return Math.atan2(this.b, this.a);
 	}
 
 	/**
-	 * Get scale factors
+	 * Get translation vector
 	 */
-	getScale(): { x: TScale; y: TScale } {
-		const values = this.matrix.tensor.dataSync();
-		const scaleX = Math.sqrt(values[0] * values[0] + values[3] * values[3]);
-		const scaleY = Math.sqrt(values[1] * values[1] + values[4] * values[4]);
-		return {
-			x: scaleX as TScale,
-			y: scaleY as TScale,
-		};
+	getTranslation(): Vector {
+		// Create a basis for the translation vector
+		const identityBasis = new Basis(AffineTransform.identity());
+		return new Vector(identityBasis, {
+			x: this.x as TCoordinateX,
+			y: this.y as TCoordinateY,
+		});
 	}
 
 	/**
-	 * Clean up resources
+	 * Convert to CSS matrix string
 	 */
-	dispose(): void {
-		this.matrix.dispose();
+	toCSSMatrix(): string {
+		return `${this.a}, ${this.b}, ${this.c}, ${this.d}, ${this.x}, ${this.y}`;
+	}
+
+	getRaw() {
+		return { a: this.a, b: this.b, x: this.x, c: this.c, d: this.d, y: this.y };
+	}
+
+	equals(other: AffineTransform): boolean {
+		return (
+			this.a === other.a &&
+			this.b === other.b &&
+			this.x === other.x &&
+			this.c === other.c &&
+			this.d === other.d &&
+			this.y === other.y
+		);
 	}
 }

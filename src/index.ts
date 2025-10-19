@@ -3,9 +3,20 @@
  * Modern 2D coordinate system with affine transformations
  */
 
-// React components and hooks
+// Legacy exports
 export * from "./lib/components";
+// React Components API
+export { Item, Space, Viewport } from "./lib/components/react";
+export { Arc } from "./lib/components/react/Arc";
+export { CustomControl } from "./lib/components/react/CustomControl";
+export { Edge } from "./lib/components/react/Edge";
+export { Node } from "./lib/components/react/Node";
+export { ZoomControl } from "./lib/components/react/ZoomControl";
 export * from "./lib/geometry/aabb";
+export { Basis } from "./lib/geometry/Basis";
+// Geometry API
+export { Box } from "./lib/geometry/Box";
+export { Circle } from "./lib/geometry/Circle";
 export * from "./lib/geometry/matrix";
 export * from "./lib/geometry/transform";
 export * from "./lib/geometry/utils";

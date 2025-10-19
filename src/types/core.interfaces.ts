@@ -6,6 +6,8 @@ import type {
 	TAnimationEasing,
 	TComponentType,
 	TCoordinate,
+	TCoordinateX,
+	TCoordinateY,
 	TDistance,
 	TElementId,
 	TElementType,
@@ -23,8 +25,8 @@ import type {
  * Core geometry interfaces for 2D affine transformations using TensorFlow.js
  */
 export interface IPoint2D {
-	x: TCoordinate;
-	y: TCoordinate;
+	x: TCoordinateX;
+	y: TCoordinateY;
 }
 
 export interface ITensorPoint2D extends IPoint2D {

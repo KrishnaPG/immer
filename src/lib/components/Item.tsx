@@ -2,6 +2,8 @@ import { clsx } from "clsx";
 import type React from "react";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { useSpatialContext } from "../context/SpatialContext";
+import { useSpatialGesture } from "../interactions/hooks/useSpatialGesture";
+import { useSpatialDnd } from "../interactions/SpatialDndContext";
 
 export interface ItemProps {
 	children: React.ReactNode;
@@ -10,16 +12,30 @@ export interface ItemProps {
 	tappable?: boolean;
 	scalable?: boolean;
 	rotatable?: boolean;
+	holdable?: boolean;
+	approachable?: boolean;
 	x?: number;
 	y?: number;
 	width?: number | string;
 	height?: number | string;
 	rotation?: number;
 	scale?: number;
+	// Enhanced interaction props
+	enableGestures?: boolean;
+	enableDnd?: boolean;
+	dndId?: string;
 	onTap?: (event: any) => void;
 	onDrag?: (event: any) => void;
 	onScale?: (event: any) => void;
 	onRotate?: (event: any) => void;
+	onHold?: (event: any) => void;
+	onApproach?: (event: any) => void;
+	// Spatial gesture options
+	gestureOptions?: {
+		dragThreshold?: number;
+		pinchThreshold?: number;
+		enableHover?: boolean;
+	};
 }
 
 export interface IItem {
@@ -43,22 +59,66 @@ export const Item = forwardRef<IItem, ItemProps>(
 			tappable: isTappable = false,
 			scalable: isScalable = false,
 			rotatable: isRotatable = false,
+			holdable: isHoldable = false,
+			approachable: isApproachable = false,
 			x = 0,
 			y = 0,
 			width = "auto",
 			height = "auto",
 			rotation = 0,
 			scale = 1,
+			enableGestures = true,
+			enableDnd = false,
+			dndId,
 			onTap,
 			onDrag,
 			onScale,
 			onRotate,
+			onHold,
+			onApproach,
+			gestureOptions = {},
 		},
 		ref,
 	) => {
 		const itemRef = useRef<HTMLDivElement>(null);
 		const itemInstance = useRef<IItem | null>(null);
 		const { viewport } = useSpatialContext();
+
+		// Set up spatial gestures
+		const { bind: gestureBind } = useSpatialGesture(
+			itemRef as React.RefObject<HTMLElement>,
+			{
+				enableDrag: isDraggable,
+				enablePinch: isScalable || isRotatable,
+				enableWheel: isScalable,
+				enableHover: isTappable || isHoldable || isApproachable,
+				dragThreshold: gestureOptions.dragThreshold || 5,
+				pinchThreshold: gestureOptions.pinchThreshold || 10,
+			},
+			{
+				onDrag: (delta, event) => {
+					onDrag?.(event);
+				},
+				onPinch: (transform, event) => {
+					onScale?.(event);
+				},
+				onWheel: (transform, event) => {
+					onScale?.(event);
+				},
+				onTap: (point, event) => {
+					onTap?.(event);
+				},
+				onHover: (active, event) => {
+					onApproach?.(event);
+				},
+			}
+		);
+
+		// Set up drag and drop
+		const dndAttributes = enableDnd && dndId ? {
+			'data-dnd-id': dndId,
+			draggable: true,
+		} : {};
 
 		// Initialize item instance
 		useEffect(() => {
@@ -220,16 +280,24 @@ export const Item = forwardRef<IItem, ItemProps>(
 			isTappable,
 			isScalable,
 			isRotatable,
+			isHoldable,
+			isApproachable,
 			x,
 			y,
 			width,
 			height,
 			rotation,
 			scale,
+			enableGestures,
+			enableDnd,
+			dndId,
 			onTap,
 			onDrag,
 			onScale,
 			onRotate,
+			onHold,
+			onApproach,
+			gestureOptions,
 		]);
 
 		// Expose item API
@@ -240,6 +308,8 @@ export const Item = forwardRef<IItem, ItemProps>(
 				ref={itemRef}
 				className={`affine-item ${className}`}
 				data-item-id={`item-${Math.random().toString(36).substr(2, 9)}`}
+				{...(enableGestures ? gestureBind() : {})}
+				{...dndAttributes}
 			>
 				{children}
 			</div>
