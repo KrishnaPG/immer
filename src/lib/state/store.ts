@@ -1,7 +1,6 @@
 import { proxy } from "valtio";
-import { AABB } from "@/geometry/aabb";
-import { AffineTransform } from "@/geometry/transform";
-import { Vector2D } from "@/geometry/vector";
+import { AffineTransform } from "@/lib/geometry/transform";
+import { Vector2D } from "@/lib/geometry/vector";
 import type {
 	TAffineTransform,
 	TAngle,
@@ -49,7 +48,8 @@ export const spaceActions = {
 		const space: ISpace = {
 			id,
 			elements: new Map(),
-			transform: AffineTransform.identity().matrix as unknown as TAffineTransform,
+			transform: AffineTransform.identity()
+				.matrix as unknown as TAffineTransform,
 			bounds: undefined,
 			...config,
 		};
@@ -157,11 +157,12 @@ export const elementActions = {
 			size: {
 				width: 100 as TWidth,
 				height: 100 as THeight,
-				tensor: new Vector2D(100 as TCoordinate, 100 as TCoordinate).tensor
+				tensor: new Vector2D(100 as TCoordinate, 100 as TCoordinate).tensor,
 			},
 			rotation: 0 as TAngle,
 			scale: 1 as TScale,
-			transform: AffineTransform.identity().matrix as unknown as TAffineTransform,
+			transform: AffineTransform.identity()
+				.matrix as unknown as TAffineTransform,
 			visible: true,
 			interactive: true,
 			children: [],
