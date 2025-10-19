@@ -75,3 +75,45 @@ export type TSHA256Hex = Branded<TB58String, "sha256 hex string">;
 
 // SQL String
 export type TSQLString = Branded<string, "SQL">;
+
+// Tapspace-specific types
+export type TSpaceId = Branded<string, "SpaceId">;
+export type TElementId = Branded<string, "ElementId">;
+export type TViewportId = Branded<string, "ViewportId">;
+export type TTransformId = Branded<string, "TransformId">;
+
+// Geometry types
+export type TCoordinate = Branded<number, "Coordinate">;
+export type TAngle = Branded<number, "Angle">;
+export type TScale = Branded<number, "Scale">;
+export type TDistance = Branded<number, "Distance">;
+export type TWidth  = Branded<TDistance, "Width">;
+export type THeight = Branded<TDistance, "Height">;
+
+// Vector types
+export type TVector2D = Branded<[TCoordinate, TCoordinate], "Vector2D">;
+export type TVector3D = Branded<[TCoordinate, TCoordinate, TCoordinate], "Vector3D">;
+
+// Matrix types
+export type TMatrix3x3 = Branded<Float32Array, "Matrix3x3">;
+export type TMatrix4x4 = Branded<Float32Array, "Matrix4x4">;
+
+// Affine transform types
+export type TAffineTransform = Branded<TMatrix3x3, "AffineTransform">;
+export type TTransformOrigin = Branded<TVector2D, "TransformOrigin">;
+
+// Interaction types
+export type TGestureType = Branded<string, "GestureType">;
+export type TInteractionMode = Branded<string, "InteractionMode">;
+
+// Animation types
+export type TAnimationDuration = Branded<number, "AnimationDuration">;
+export type TAnimationEasing = Branded<string, "AnimationEasing">;
+
+// Component types
+export type TComponentType = Branded<string, "ComponentType">;
+export type TElementType = Branded<string, "ElementType">;
+
+// State types
+export type TStateKey = Branded<string, "StateKey">;
+export type TStateValue = Branded<unknown, "StateValue">;
