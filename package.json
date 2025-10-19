@@ -1,8 +1,26 @@
 {
-  "name": "vite-project",
-  "private": true,
-  "version": "0.0.0",
+  "name": "immer",
+  "private": false,
+  "version": "1.0.0",
   "type": "module",
+  "description": "Interactive 2D and 3D spaces for web browsers - TypeScript implementation",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./geometry": {
+      "types": "./dist/lib/geometry/index.d.ts",
+      "import": "./dist/lib/geometry/index.js"
+    },
+    "./components": {
+      "types": "./dist/lib/components/index.d.ts",
+      "import": "./dist/lib/components/index.js"
+    },
+    "./styles": "./dist/styles/tapspace.css"
+  },
   "scripts": {
     "build": "bun run type-check && bun run lint && vite build",
     "check": "biome check --write",
