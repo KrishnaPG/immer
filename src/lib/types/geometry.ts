@@ -37,7 +37,7 @@ export interface ITransformMatrix {
 // Basis interface for coordinate system transformations
 export interface IBasis {
 	readonly element: THtmlElement;
-	readonly transform: ITransformMatrix;
+	readonly matrix: ITransformMatrix;
 }
 
 // Raw tensor representation
@@ -102,13 +102,13 @@ export interface IBox extends IGeometry {
 
 // Transform interface for active transformations
 export interface ITransform extends IGeometry {
-	readonly isTransform: true;
-	readonly transform: ITransformMatrix;
+ 	readonly isTransform: true;
+ 	readonly matrix: ITransformMatrix;
 
-	// Transform-specific methods
-	inverse(): ITransform;
-	multiply(other: ITransform): ITransform;
-}
+ 	// Transform-specific methods
+ 	inverse(): ITransform;
+ 	multiply(other: ITransform): ITransform;
+ }
 
 // Size interface
 export interface ISize extends IGeometry, ISizeDimensions {

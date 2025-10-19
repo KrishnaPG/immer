@@ -32,12 +32,20 @@ export type TArea = Branded<TMeasurement, "Area">;
 export type TVolume = Branded<TMeasurement, "Volume">;
 
 // Matrix component types
-export type TMatrixA = Branded<number, "MatrixA">;
-export type TMatrixB = Branded<number, "MatrixB">;
-export type TMatrixC = Branded<number, "MatrixC">;
-export type TMatrixD = Branded<number, "MatrixD">;
-export type TMatrixE = Branded<number, "MatrixE">;
-export type TMatrixF = Branded<number, "MatrixF">;
+export type TMatScaleX = Branded<TScaleFactor, "MatScaleX">;
+export type TMatShearYX = Branded<number, "Shear YX">;
+export type TMatShearXY = Branded<number, "Shear XY">;
+export type TMatScaleY = Branded<TScaleFactor, "MatScaleY">;
+export type TMatScaleZ = Branded<TScaleFactor, "MatScaleZ">;
+export type TMatTx   = Branded<number, "MatTransX">;
+export type TMatTy   = Branded<number, "MatTransY">;
+
+export type TMatrixA = TMatScaleX;
+export type TMatrixB = TMatShearYX;
+export type TMatrixC = TMatShearXY;
+export type TMatrixD = TMatScaleY;
+export type TMatrixE = TMatTx;
+export type TMatrixF = TMatTy;
 
 // Element types
 export type THtmlElement = Branded<HTMLElement, "BasisElement">;
