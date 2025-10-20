@@ -4,9 +4,11 @@ import {
 	elementActions,
 	spaceActions,
 	store,
+	storeGetters,
 	viewportActions,
 } from "@/lib/state/store";
 import type { TElementId, TSpaceId, TViewportId } from "@/types/branded.types";
+import { generateId } from "../utils/id-generator";
 
 export interface EntityBaseConfig {
 	id?: string;
@@ -28,43 +30,43 @@ export interface EntityBaseReturn<T> {
 export const useEntityBase = <T extends { id: string }>(
 	config: EntityBaseConfig,
 ): EntityBaseReturn<T> => {
-	const snapshot = useSnapshot(store);
-
 	// Generate ID if not provided
 	const id = useMemo(
-		() =>
-			config.id ||
-			`${config.entityType}-${Math.random().toString(36).substr(2, 9)}`,
+		() =>	config.id || generateId(config.entityType),
 		[config.id, config.entityType],
 	) as TElementId | TSpaceId | TViewportId;
+
+	// Only subscribe to the specific parts of the store we need
+	const storeSnapshot = useSnapshot(store);
+	const { spaces, elements, viewports, activeViewport } = storeSnapshot;
 
 	// Check if entity exists
 	const exists = useMemo(() => {
 		switch (config.entityType) {
 			case "space":
-				return snapshot.spaces.has(id as TSpaceId);
+				return spaces.has(id as TSpaceId);
 			case "element":
-				return snapshot.elements.has(id as TElementId);
+				return elements.has(id as TElementId);
 			case "viewport":
-				return snapshot.viewports.has(id as TViewportId);
+				return viewports.has(id as TViewportId);
 			default:
 				return false;
 		}
-	}, [id, snapshot, config.entityType]);
+	}, [id, spaces, elements, viewports, config.entityType]);
 
 	// Get entity from store
 	const entity = useMemo(() => {
 		switch (config.entityType) {
 			case "space":
-				return snapshot.spaces.get(id as TSpaceId) as T | undefined;
+				return spaces.get(id as TSpaceId) as T | undefined;
 			case "element":
-				return snapshot.elements.get(id as TElementId) as T | undefined;
+				return elements.get(id as TElementId) as T | undefined;
 			case "viewport":
-				return snapshot.viewports.get(id as TViewportId) as T | undefined;
+				return viewports.get(id as TViewportId) as T | undefined;
 			default:
 				return undefined;
 		}
-	}, [id, snapshot, config.entityType]);
+	}, [id, spaces, elements, viewports, config.entityType]);
 
 	// Create entity if dependencies are met
 	const createEntity = useMemo(() => {
@@ -74,7 +76,7 @@ export const useEntityBase = <T extends { id: string }>(
 					if (
 						!exists &&
 						!config.requiredDependencies?.some(
-							(dep) => !snapshot.spaces.has(dep as TSpaceId),
+							(dep) => !storeGetters.hasSpace(dep as TSpaceId),
 						)
 					) {
 						spaceActions.createSpace(id as TSpaceId);
@@ -85,7 +87,7 @@ export const useEntityBase = <T extends { id: string }>(
 					if (
 						!exists &&
 						config.requiredDependencies?.some((dep) =>
-							snapshot.spaces.has(dep as TSpaceId),
+							storeGetters.hasSpace(dep as TSpaceId),
 						)
 					) {
 						elementActions.createElement(
@@ -99,11 +101,11 @@ export const useEntityBase = <T extends { id: string }>(
 					if (
 						!exists &&
 						config.requiredDependencies?.some((dep) =>
-							snapshot.spaces.has(dep as TSpaceId),
+							storeGetters.hasSpace(dep as TSpaceId),
 						)
 					) {
 						// Create viewport using the main store's viewportActions equivalent
-						const space = snapshot.spaces.get(config.requiredDependencies[0] as TSpaceId);
+						const space = storeGetters.getSpace(config.requiredDependencies[0] as TSpaceId);
 						if (space) {
 							const viewport: any = {
 								id: id as TViewportId,
@@ -116,8 +118,9 @@ export const useEntityBase = <T extends { id: string }>(
 								},
 								container: document.createElement("div"),
 							};
-							snapshot.viewports.set(id as TViewportId, viewport);
-							if (!snapshot.activeViewport) {
+							// Use direct proxy access for mutations
+							store.viewports.set(id as TViewportId, viewport);
+							if (!storeGetters.getActiveViewport()) {
 								store.activeViewport = id as TViewportId;
 							}
 						}
@@ -126,7 +129,7 @@ export const useEntityBase = <T extends { id: string }>(
 			default:
 				return () => {};
 		}
-	}, [exists, id, snapshot, config.entityType, config.requiredDependencies]);
+	}, [exists, id, config.entityType, config.requiredDependencies]);
 
 	// Remove entity
 	const removeEntity = useMemo(() => {

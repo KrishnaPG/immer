@@ -11,6 +11,7 @@ import {
 import { Basis } from "../../lib/geometry/Basis";
 import { AffineTransform } from "../../lib/geometry/transform";
 import { Vector2D } from "../../lib/geometry/vector";
+import { useViewport } from "../../lib/hooks";
 import type { TCoordinate } from "../../types/branded.types";
 
 export const InteractiveGraph: React.FC = () => {
@@ -37,7 +38,9 @@ export const InteractiveGraph: React.FC = () => {
 			y: 200 as TCoordinate,
 		}),
 	});
-	const [zoomLevel, setZoomLevel] = useState(1);
+
+	// Use the viewport hook for zoom functionality
+	const { viewport, zoomViewport, resetViewport } = useViewport();
 
 	const identityBasis = new Basis(AffineTransform.identity());
 
@@ -61,19 +64,25 @@ export const InteractiveGraph: React.FC = () => {
 	);
 
 	const handleZoomIn = useCallback(() => {
-		setZoomLevel((prev) => Math.min(prev * 1.5, 5));
-		console.log('Zoom in clicked');
-	}, []);
+		if (zoomViewport) {
+			zoomViewport(1.5);
+			console.log("Zoom in clicked");
+		}
+	}, [zoomViewport]);
 
 	const handleZoomOut = useCallback(() => {
-		setZoomLevel((prev) => Math.max(prev / 1.5, 0.1));
-		console.log('Zoom out clicked');
-	}, []);
+		if (zoomViewport) {
+			zoomViewport(0.67); // 1 / 1.5
+			console.log("Zoom out clicked");
+		}
+	}, [zoomViewport]);
 
 	const handleZoomReset = useCallback(() => {
-		setZoomLevel(1);
-		console.log('Zoom reset clicked');
-	}, []);
+		if (resetViewport) {
+			resetViewport();
+			console.log("Zoom reset clicked");
+		}
+	}, [resetViewport]);
 
 	return (
 		<div className="w-full h-96">

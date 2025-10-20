@@ -264,3 +264,108 @@ export const resetStore = (): void => {
 	store.activeViewport = null;
 	store.isInitialized = false;
 };
+
+/**
+	* Direct proxy access utilities for non-reactive operations
+	* These functions provide access to the store proxy without triggering subscriptions
+	*/
+export const storeGetters = {
+	/**
+	 * Get direct access to the store proxy (non-reactive)
+	 * Use this for operations that don't need to trigger re-renders
+	 */
+	getStore: () => store,
+	
+	/**
+	 * Get a space directly from the proxy (non-reactive)
+	 */
+	getSpace: (id: TSpaceId) => store.spaces.get(id),
+	
+	/**
+	 * Check if a space exists directly (non-reactive)
+	 */
+	hasSpace: (id: TSpaceId) => store.spaces.has(id),
+	
+	/**
+	 * Get all spaces as iterator directly (non-reactive)
+	 * Let callers convert to array if needed
+	 */
+	getAllSpaces: () => store.spaces.values(),
+	
+	/**
+	 * Get an element directly from the proxy (non-reactive)
+	 */
+	getElement: (id: TElementId) => store.elements.get(id),
+	
+	/**
+	 * Check if an element exists directly (non-reactive)
+	 */
+	hasElement: (id: TElementId) => store.elements.has(id),
+	
+	/**
+	 * Get all elements as iterator directly (non-reactive)
+	 * Let callers convert to array if needed
+	 */
+	getAllElements: () => store.elements.values(),
+	
+	/**
+	 * Get a viewport directly from the proxy (non-reactive)
+	 */
+	getViewport: (id: TViewportId) => store.viewports.get(id),
+	
+	/**
+	 * Check if a viewport exists directly (non-reactive)
+	 */
+	hasViewport: (id: TViewportId) => store.viewports.has(id),
+	
+	/**
+	 * Get all viewports as iterator directly (non-reactive)
+	 * Let callers convert to array if needed
+	 */
+	getAllViewports: () => store.viewports.values(),
+	
+	/**
+	 * Get active space directly (non-reactive)
+	 */
+	getActiveSpace: () => store.activeSpace,
+	
+	/**
+	 * Get active viewport directly (non-reactive)
+	 */
+	getActiveViewport: () => store.activeViewport,
+	
+	/**
+	 * Get specific element properties directly (non-reactive)
+	 * Use this when you only need specific properties to avoid object creation overhead
+	 */
+	getElementPosition: (id: TElementId) => {
+		const element = store.elements.get(id);
+		return element ? element.position : undefined;
+	},
+	
+	getElementTransform: (id: TElementId) => {
+		const element = store.elements.get(id);
+		return element ? element.transform : undefined;
+	},
+	
+	getViewportCamera: (id: TViewportId) => {
+		const viewport = store.viewports.get(id);
+		return viewport ? viewport.camera : undefined;
+	},
+	
+	/**
+	 * Get IDs without creating subscriptions (non-reactive)
+	 * Use these when you need the IDs but don't need to react to changes
+	 */
+	getSpaceIds: () => Array.from(store.spaces.keys()),
+	getElementIds: () => Array.from(store.elements.keys()),
+	getViewportIds: () => Array.from(store.viewports.keys()),
+	
+	/**
+	 * Get ID iterators without creating subscriptions (non-reactive)
+	 * Use these for optimal performance when iterating
+	 */
+	getSpaceIdsIterator: () => store.spaces.keys(),
+	getElementIdsIterator: () => store.elements.keys(),
+	getViewportIdsIterator: () => store.viewports.keys(),
+};

@@ -122,3 +122,8 @@ export type TElementType = Branded<string, "ElementType">;
 // State types
 export type TStateKey = Branded<string, "StateKey">;
 export type TStateValue = Branded<unknown, "StateValue">;
+
+// Hierarchical types
+export type THierarchyLevel = Branded<number, "HierarchyLevel">;
+export type THierarchyDepth = Branded<number, "HierarchyDepth">;
+export type TTreeLayoutAlgorithm = Branded<string, "TreeLayoutAlgorithm">;

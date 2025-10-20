@@ -1,36 +1,34 @@
 import { useSnapshot } from "valtio";
 import type { TElementId, TSpaceId, TViewportId } from "@/types/branded.types";
-import { store } from "../state";
+import { store, storeGetters } from "../state";
 
 /**
  * Hook for accessing spatial state data
  * Provides access to spaces, elements, and viewports from the global store
  */
 export function useSpatialState() {
-	const snapshot = useSnapshot(store);
+	// Only subscribe to the specific parts of the store we need
+	const { spaces, elements, viewports, activeSpace, activeViewport } = useSnapshot(store);
 
 	return {
 		// Spaces
-		spaces: snapshot.spaces,
-		useSpace: (id: string) => snapshot.spaces.get(id as TSpaceId),
-		hasSpace: (id: string) => snapshot.spaces.has(id as TSpaceId),
-		spaceIds: Array.from(snapshot.spaces.keys()),
+		spaces,
+		useSpace: (id: string) => spaces.get(id as TSpaceId),
+		hasSpace: (id: string) => spaces.has(id as TSpaceId),
 
 		// Elements
-		elements: snapshot.elements,
-		useElement: (id: string) => snapshot.elements.get(id as TElementId),
-		hasElement: (id: string) => snapshot.elements.has(id as TElementId),
-		elementIds: Array.from(snapshot.elements.keys()),
+		elements,
+		useElement: (id: string) => elements.get(id as TElementId),
+		hasElement: (id: string) => elements.has(id as TElementId),
 
 		// Viewports
-		viewports: snapshot.viewports,
-		useViewport: (id: string) => snapshot.viewports.get(id as TViewportId),
-		hasViewport: (id: string) => snapshot.viewports.has(id as TViewportId),
-		viewportIds: Array.from(snapshot.viewports.keys()),
+		viewports,
+		useViewport: (id: string) => viewports.get(id as TViewportId),
+		hasViewport: (id: string) => viewports.has(id as TViewportId),
 
 		// Active entities
-		activeSpace: snapshot.activeSpace,
-		activeViewport: snapshot.activeViewport,
+		activeSpace,
+		activeViewport,
 	};
 }
 
@@ -38,8 +36,10 @@ export function useSpatialState() {
  * Hook for accessing active space
  */
 export function useActiveSpace() {
-	const { activeSpace, useSpace } = useSpatialState();
-	const space = useSpace(activeSpace || "");
+	// Only subscribe to activeSpace, not the entire store
+	const activeSpace = useSnapshot(store).activeSpace;
+	// Use non-reactive getter for the space data since we only need it once
+	const space = activeSpace ? storeGetters.getSpace(activeSpace) : null;
 	return activeSpace ? space : null;
 }
 
@@ -47,8 +47,10 @@ export function useActiveSpace() {
  * Hook for accessing active viewport
  */
 export function useActiveViewport() {
-	const { activeViewport, useViewport } = useSpatialState();
-	const viewport = useViewport(activeViewport || "");
+	// Only subscribe to activeViewport, not the entire store
+	const activeViewport = useSnapshot(store).activeViewport;
+	// Use non-reactive getter for the viewport data since we only need it once
+	const viewport = activeViewport ? storeGetters.getViewport(activeViewport) : null;
 	return activeViewport ? viewport : null;
 }
 
@@ -56,22 +58,22 @@ export function useActiveViewport() {
  * Hook for accessing all spaces
  */
 export function useSpaces() {
-	const { spaces } = useSpatialState();
-	return spaces;
+	// Only subscribe to spaces, not the entire store
+	return useSnapshot(store).spaces;
 }
 
 /**
  * Hook for accessing all elements
  */
 export function useElements() {
-	const { elements } = useSpatialState();
-	return elements;
+	// Only subscribe to elements, not the entire store
+	return useSnapshot(store).elements;
 }
 
 /**
  * Hook for accessing all viewports
  */
 export function useViewports() {
-	const { viewports } = useSpatialState();
-	return viewports;
+	// Only subscribe to viewports, not the entire store
+	return useSnapshot(store).viewports;
 }

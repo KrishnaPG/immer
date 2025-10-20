@@ -3,4 +3,3 @@
  */
 
 export * from "./useSpatialState";
-export * from "./useViewportIntegration";

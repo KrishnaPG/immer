@@ -11,11 +11,6 @@ export {
 	type UseSpaceReturn,
 	useSpace,
 } from "../components/hooks/useSpace";
-// Component hooks (maintain backward compatibility)
-export {
-	type UseViewportReturn,
-	useViewport
-} from "../components/hooks/useViewport";
 // Basis and geometry utilities
 export { type BasisConfig, useBasis, useCameraBasis } from "./useBasis";
 // Base entity management hook
@@ -33,3 +28,8 @@ export {
 	useSpatialState,
 	useViewports,
 } from "./useSpatialState";
+// Component hooks (maintain backward compatibility)
+export {
+	type UseViewportReturn,
+	useViewport,
+} from "./useViewport";

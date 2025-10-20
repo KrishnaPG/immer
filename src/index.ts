@@ -3,13 +3,18 @@
  * Modern 2D coordinate system with affine transformations
  */
 
+// Hierarchical example
+export { default as HierarchicalNetworkExample } from "./examples/hierarchical";
 // Legacy exports
 export * from "./lib/components";
+// Hierarchical components
+export * from "./lib/components/HierarchicalViewport";
 // React Components API
 export { Item, Space, Viewport } from "./lib/components/react";
 export { Arc } from "./lib/components/react/Arc";
 export { CustomControl } from "./lib/components/react/CustomControl";
 export { Edge } from "./lib/components/react/Edge";
+export * from "./lib/components/react/HierarchicalNode";
 export { Node } from "./lib/components/react/Node";
 export { ZoomControl } from "./lib/components/react/ZoomControl";
 export * from "./lib/geometry/aabb";
@@ -17,18 +22,30 @@ export { Basis } from "./lib/geometry/Basis";
 // Geometry API
 export { Box } from "./lib/geometry/Box";
 export { Circle } from "./lib/geometry/Circle";
+// Hierarchical geometry
+export * from "./lib/geometry/hierarchical-layout";
 export * from "./lib/geometry/matrix";
 export * from "./lib/geometry/transform";
 export * from "./lib/geometry/utils";
 // Geometry engine (TensorFlow.js powered)
 export * from "./lib/geometry/vector";
+// Hierarchical hooks
+export * from "./lib/hooks/useHierarchical";
 // State management (Valtio)
-export * from "./lib/state/store";
+export * from "./lib/state/";
 // Styles
 export * from "./styles/base.css";
 // Core types and interfaces
 export * from "./types/branded.types";
 export * from "./types/core.interfaces";
+// Hierarchical types
+export type {
+	IHierarchicalNavigation,
+	IHierarchicalNode,
+	ITreeLayoutConfig,
+	ITreeLayoutResult,
+	IZoomToNodeConfig,
+} from "./types/hierarchical.interfaces";
 
 // Factory functions for imperative API (original tapspace compatibility)
 import {

@@ -1,0 +1,11 @@
+### Notes:
+ - All interfaces should be prefixed with `I` (e.g. `interface ISpace`), and types should be prefixed with `T` (e.g. `type TPoint2D`);
+ - base type-casting should be avoided as much as possible (e.g. do not do: `Number(a.x) > Number(a.y)`; instead just do `a.x > a.y` since the branded types can be directly operated as their base classes)
+ - Use CSS Modules + Tailwind for component styling
+ - **State Management**: create `useXYZ` hooks using valtio with `useSnapshot` on the store proxy; updating the store through proxy triggers reactive updates to the snapshot readers; Reading from a snapshot creates automatic subscription for reactive updates; If you just need current state without subscription, read directly from the proxy; Reading from the proxy gives current state, while reading from snapshot subscribes to all future updates;
+ - **Animation Preferences**: Animations should be dynamically on/off (default: ON) for better performance;
+ - **Documentation**: Should be able to generate API documentation using TypeDoc
+ - Tests should be kept separate from the source files. e.g. keep the tests under `/tests` folder while the source is under `/src` folder;
+ - Use `.tsx` extension for React component files;
+ - Start with the basic foundation and make sure to create "testable" code at each level/phase incrementally;
+ - Get it right first, then optimize it;

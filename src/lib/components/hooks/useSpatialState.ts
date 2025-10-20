@@ -8,6 +8,8 @@ import {
 
 /**
  * Hook to access the Valtio spatial state with automatic reactivity
+ * WARNING: This subscribes to the entire store and should be used sparingly
+ * Consider using the more specific hooks below for better performance
  */
 export const useSpatialState = () => {
 	return useSnapshot(store);
@@ -17,11 +19,12 @@ export const useSpatialState = () => {
  * Hook to access and manage spaces
  */
 export const useSpaces = () => {
-	const state = useSpatialState();
+	// Only subscribe to spaces and activeSpace, not the entire store
+	const { spaces, activeSpace } = useSnapshot(store);
 
 	return {
-		spaces: state.spaces,
-		activeSpace: state.activeSpace,
+		spaces,
+		activeSpace,
 		createSpace: spaceActions.createSpace,
 		removeSpace: spaceActions.removeSpace,
 		setActiveSpace: spaceActions.setActiveSpace,
@@ -32,11 +35,12 @@ export const useSpaces = () => {
  * Hook to access and manage viewports
  */
 export const useViewports = () => {
-	const state = useSpatialState();
+	// Only subscribe to viewports and activeViewport, not the entire store
+	const { viewports, activeViewport } = useSnapshot(store);
 
 	return {
-		viewports: state.viewports,
-		activeViewport: state.activeViewport,
+		viewports,
+		activeViewport,
 		createViewport: viewportActions.createViewport,
 		removeViewport: viewportActions.removeViewport,
 		setActiveViewport: viewportActions.setActiveViewport,
@@ -47,10 +51,11 @@ export const useViewports = () => {
  * Hook to access and manage elements
  */
 export const useElements = () => {
-	const state = useSpatialState();
+	// Only subscribe to elements, not the entire store
+	const { elements } = useSnapshot(store);
 
 	return {
-		elements: state.elements,
+		elements,
 		createElement: elementActions.createElement,
 		removeElement: elementActions.removeElement,
 		updateElementTransform: elementActions.updateElementTransform,

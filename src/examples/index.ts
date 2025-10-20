@@ -4,6 +4,7 @@ import { BasicNodes } from "./basic/BasicNodes";
 import { Minimal } from "./basic/Minimal";
 import { Grid } from "./coordinate/Grid";
 import { TouchInteractions } from "./interactions/TouchInteractions";
+import { HierarchicalNetworkExample } from "./hierarchical";
 
 export interface ExampleInfo {
 	id: string;
@@ -16,7 +17,8 @@ export interface ExampleInfo {
 		| "layouts"
 		| "animations"
 		| "data-visualization"
-		| "coordinate";
+		| "coordinate"
+		| "hierarchical";
 	component: React.ComponentType;
 	difficulty: "beginner" | "intermediate" | "advanced";
 	tags: string[];
@@ -82,6 +84,16 @@ export const examples: ExampleInfo[] = [
 		component: Grid,
 		difficulty: "beginner",
 		tags: ["coordinate", "grid", "spatial", "basics", "visualization"],
+	},
+	{
+		id: "hierarchical-network",
+		title: "Hierarchical Network",
+		description:
+			"Large hierarchical networks with smooth zoom-to-node functionality, multiple layout algorithms, and navigation history.",
+		category: "hierarchical",
+		component: HierarchicalNetworkExample,
+		difficulty: "advanced",
+		tags: ["hierarchical", "zoom-to-node", "layouts", "navigation", "network", "trees"],
 	}
 ];
 
